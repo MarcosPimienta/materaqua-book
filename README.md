@@ -49,5 +49,5 @@ npm run build
 - `src/components/3d/`: R3F components (Book, Page, Popups).
 - `src/components/ui/`: Standard React components for the interface.
 - `src/hooks/`: Custom hooks for animation and state management.
-- `src/store/`: State management for the book's progress.
-- `src/assets/`: 3D models, textures, and fonts.
+- `public/models/`: Exported GLTF models from Blender.
+- `src/assets/`: Textures, and fonts.
