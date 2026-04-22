@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls, ContactShadows } from "@react-three/drei";
-import { Book } from "./Book";
+import { ModelTest } from "./ModelTest";
 import { Suspense } from "react";
 
 export const Experience = () => {
@@ -11,7 +11,7 @@ export const Experience = () => {
         <Suspense fallback={null}>
           <Environment preset="city" />
           <group position-y={-1}>
-            <Book />
+            <ModelTest />
             <ContactShadows
               opacity={0.5}
               scale={20}
