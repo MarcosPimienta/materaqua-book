@@ -10,28 +10,64 @@ export const ModelTest = () => {
   const cover = useGLTF("/models/BookCover.glb");
   const page00 = useGLTF("/models/Page00.glb");
 
-  const { actions: coverActions } = useAnimations(cover.animations, coverGroup);
-  const { actions: pageActions } = useAnimations(page00.animations, pageGroup);
+  const { actions: coverActions, mixer: coverMixer } = useAnimations(cover.animations, coverGroup);
+  const { actions: pageActions, mixer: pageMixer } = useAnimations(page00.animations, pageGroup);
 
   const currentPage = useBookStore((state) => state.currentPage);
+  const prevPage = useRef(currentPage);
 
   useEffect(() => {
-    if (currentPage === 1) {
-      if (coverActions["Animation"]) {
-        coverActions["Animation"].reset().fadeIn(0.5).play();
-        coverActions["Animation"].setLoop(THREE.LoopOnce, 1);
-        coverActions["Animation"].clampWhenFinished = true;
+    const coverAction = coverActions["Animation"];
+    const pageAction = pageActions["Animation"];
+
+    if (!coverAction || !pageAction) return;
+
+    const onCoverOpened = (e: any) => {
+      if (e.action === coverAction) {
+        pageAction.reset().setLoop(THREE.LoopOnce, 1);
+        pageAction.clampWhenFinished = true;
+        pageAction.timeScale = 1;
+        pageAction.play();
       }
-      if (pageActions["Animation"]) {
-        pageActions["Animation"].reset().fadeIn(0.5).play();
-        pageActions["Animation"].setLoop(THREE.LoopOnce, 1);
-        pageActions["Animation"].clampWhenFinished = true;
+    };
+
+    const onPageClosed = (e: any) => {
+      if (e.action === pageAction) {
+        coverAction.paused = false;
+        coverAction.setLoop(THREE.LoopOnce, 1);
+        coverAction.clampWhenFinished = true;
+        coverAction.timeScale = -1;
+        if (coverAction.time === 0) coverAction.time = coverAction.getClip().duration;
+        coverAction.play();
       }
-    } else if (currentPage === 0) {
-      if (coverActions["Animation"]) coverActions["Animation"].fadeOut(0.5).stop();
-      if (pageActions["Animation"]) pageActions["Animation"].fadeOut(0.5).stop();
+    };
+
+    // Opening Sequence (C -> 1)
+    if (currentPage === 1 && prevPage.current === 0) {
+      coverMixer.addEventListener("finished", onCoverOpened);
+      coverAction.reset().setLoop(THREE.LoopOnce, 1);
+      coverAction.clampWhenFinished = true;
+      coverAction.timeScale = 1;
+      coverAction.play();
+    } 
+    // Closing Sequence (1 -> C)
+    else if (currentPage === 0 && prevPage.current === 1) {
+      pageMixer.addEventListener("finished", onPageClosed);
+      pageAction.paused = false;
+      pageAction.setLoop(THREE.LoopOnce, 1);
+      pageAction.clampWhenFinished = true;
+      pageAction.timeScale = -1;
+      if (pageAction.time === 0) pageAction.time = pageAction.getClip().duration;
+      pageAction.play();
     }
-  }, [coverActions, pageActions, currentPage]);
+
+    prevPage.current = currentPage;
+
+    return () => {
+      coverMixer.removeEventListener("finished", onCoverOpened);
+      pageMixer.removeEventListener("finished", onPageClosed);
+    };
+  }, [coverActions, pageActions, coverMixer, pageMixer, currentPage]);
 
   return (
     <group name="Model_Test">
